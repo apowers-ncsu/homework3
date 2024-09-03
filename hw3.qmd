@@ -1,0 +1,166 @@
+---
+title: "Homework 3 Control Flow Functions"
+format: html
+editor: visual
+---
+
+# Pre-work
+
+Load in the list from hw2:
+
+```{r}
+load("hw2_list.rda")
+```
+
+# Task 1 Control Flow Practice
+
+1.  Add column *status* to each df in the list:
+
+```{r}
+bp_list[[1]]$status <- character(20)
+bp_list[[2]]$status <- character(10)
+```
+
+2.  Now, define the post- status according to this rule:
+
+-   optimal (≤ 120)
+-   borderline (120 \< bp ≤ 130)
+-   high (\> 130)
+
+First, for the *treatment* group:
+
+```{r}
+for (i in 1:20) {
+  post_bp <- bp_list$treatment$post_bp[i]
+  if (post_bp > 130) status <- 'high'
+  else if (post_bp > 120) status <- 'borderline'
+  else status <- 'optimal'
+  bp_list$treatment$status[i] <- status
+}
+```
+
+3.  Next, continue and replicate for the *placebo* group:
+
+```{r}
+for (i in 1:10) {
+  post_bp <- bp_list$placebo$post_bp[i]
+  if (post_bp > 130) status <- 'high'
+  else if (post_bp > 120) status <- 'borderline'
+  else status <- 'optimal'
+  bp_list$placebo$status[i] <- status
+}
+```
+
+# Task 2 Function Writing
+
+1.  Write a function to do the above and more, nicely.
+
+```{=html}
+<!-- -->
+```
+a.  accept an argument of a list with two dfs, *treatment* and *placebo*, no defaults.
+
+b.  accept an argument of an R function, default of 'mean'.
+
+c.  find statistic of interest for pre,post,diff cols of both dfs.
+
+d.  return the six values with good names.
+
+```{r}
+update_status <- function(my_list, #list with two dfs, treatment and placebo
+                          my_stat = 'mean' #desired action to execute, ASSUMES valid string "var", "sd", "min", "max", or "mean"
+                          ) {
+  
+  #error checking for my_list
+  if (
+    (!is.list(my_list)) |
+    (names(my_list[1]) != 'treatment') |
+    (names(my_list[2]) != 'placebo') |
+    (!is.data.frame(my_list$treatment)) |
+    (!is.data.frame(my_list$placebo)) )
+    stop("my_list is not a list of 2 dfs treatment, placebo")
+  
+  #exit on NA for my_stat
+  if (is.na(my_stat)) stop("my_stat may not be NA")
+  
+  #simple error checking for stat
+  if (
+    (my_stat != 'mean') &
+    (my_stat != 'var') &
+    (my_stat != 'sd') &
+    (my_stat != 'min') &
+    (my_stat != 'max') )
+    stop("stat function not in valid list of mean,var,sd,min,max")
+  
+  #convert string to function call
+  my_function <- get(my_stat)
+  
+  #calculate stats
+  treatment_pre_bp_stat <- my_function(my_list$treatment$pre_bp)
+  treatment_post_bp_stat <- my_function(my_list$treatment$post_bp)
+  treatment_diff_bp_stat <- my_function(my_list$treatment$diff_bp)
+  placebo_pre_bp_stat <- my_function(my_list$placebo$pre_bp)
+  placebo_post_bp_stat <- my_function(my_list$placebo$post_bp)
+  placebo_diff_bp_stat <- my_function(my_list$placebo$diff_bp)
+  
+  #create proper labels
+  my_labels <- paste(my_stat,
+                    c('treatment_pre_bp',
+                      'treatment_post_bp',
+                      'treatment_diff_bp',
+                      'placebo_pre_bp',
+                      'placebo_post_bp',
+                      'placebo_diff_bp'),
+                    sep = ' ' )
+  
+  #combine stats and labels into one vector
+  my_stat_vector <- c(treatment_pre_bp_stat,
+                      treatment_post_bp_stat,
+                      treatment_diff_bp_stat,
+                      placebo_pre_bp_stat,
+                      placebo_post_bp_stat,
+                      placebo_diff_bp_stat)
+  names(my_stat_vector) <- my_labels
+  
+  #return the full stat vector of 6 values
+  return(my_stat_vector)
+  
+}
+```
+
+e.  Now, finally, we call the function for the following values of *stat*:
+
+-   unspecified
+-   var
+-   sd
+-   min
+-   max
+
+```{r}
+#note: I hoped to do this with a for loop, iterating calls using a vector of strings
+#however, i kept getting unexpected results, with errors about NA that would not occur
+#if I typed the same direct into console. So, manual code here.
+my_stat_results <- list()
+
+my_stat_results[['unspecified']] <- update_status(bp_list)
+my_stat_results[['var']] <- update_status(bp_list,'var')
+my_stat_results[['sd']] <- update_status(bp_list,'sd')
+my_stat_results[['min']] <- update_status(bp_list,'min')
+my_stat_results[['max']] <- update_status(bp_list,'max')
+
+#my_stat
+#update_status(bp_list)
+
+#for (i in my_stat_calls) {
+  #print(i)
+  #typeof(i)
+  #str(i)
+  #my_stat_results[i] <- update_status(bp_list,my_stat_calls[i])
+#}
+#names(my_stat_results) <- my_stat_calls
+
+my_stat_results
+
+```
+
+
